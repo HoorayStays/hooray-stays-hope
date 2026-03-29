@@ -256,4 +256,10 @@ Sent by Hope · Hooray Stays AI Assistant
 }
 
 const PORT = process.env.PORT || 3000;
+// Keep-alive ping every 14 minutes
+setInterval(() => {
+  fetch(`http://localhost:${PORT}`)
+    .then(() => console.log('Keep-alive ping'))
+    .catch(e => console.log('Ping error:', e));
+}, 14 * 60 * 1000);
 app.listen(PORT, () => console.log(`Hope backend running on port ${PORT}`));
