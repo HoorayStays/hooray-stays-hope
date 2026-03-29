@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hope — Hooray Stays</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #0a7c6e;
+    --teal-light: #0d9e8c;
+    --teal-dark: #065a50;
+    --sand: #f5f0e8;
+    --sand-dark: #e8e0d0;
+    --text: #1a1a1a;
+    --text-muted: #6b7280;
+    --shadow: 0 8px 40px rgba(10,124,110,0.18);
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  #hs-launcher {
+    position: fixed; bottom: 28px; right: 28px;
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--teal), var(--teal-light));
+    box-shadow: var(--shadow); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9998; transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+  }
+  #hs-launcher:hover { transform: scale(1.08); }
+  #hs-launcher::after {
+    content: ''; position: absolute; width: 100%; height: 100%;
+    border-radius: 50%; border: 2px solid var(--teal-light);
+    animation: pulse-ring 2.5s ease-out infinite;
+  }
+  @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.7); opacity: 0; } }
+  #hs-launcher svg { transition: opacity 0.2s, transform 0.2s; }
+  #hs-launcher.open .icon-chat { opacity: 0; transform: scale(0.5); position: absolute; }
+  #hs-launcher.open .icon-close { opacity: 1; transform: scale(1); }
+  #hs-launcher .icon-close { opacity: 0; transform: scale(0.5); position: absolute; }
+  #hs-window {
+    position: fixed; bottom: 108px; right: 28px;
+    width: 380px; height: 580px; background: var(--sand);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 80px rgba(0,0,0,0.18);
+    display: flex; flex-direction: column; z-index: 9999;
+    overflow: hidden; transform: translateY(20px) scale(0.95);
+    opacity: 0; pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  #hs-window.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+  .hs-header {
+    background: linear-gradient(135deg, var(--teal-dark), var(--teal), var(--teal-light));
+    padding: 18px 20px 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .hs-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif; font-size: 20px; color: white; flex-shrink: 0;
+  }
+  .hs-header-name { font-family: 'DM Serif Display', serif; font-size: 17px; color: white; }
+  .hs-header-sub { font-size: 12px; color: rgba(255,255,255,0.75); display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+  .hs-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .hs-messages { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+  .hs-messages::-webkit-scrollbar { width: 4px; }
+  .hs-messages::-webkit-scrollbar-thumb { background: var(--sand-dark); border-radius: 4px; }
+  .hs-msg { display: flex; gap: 8px; max-width: 88%; animation: msg-in 0.3s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes msg-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  .hs-msg.hope { align-self: flex-start; }
+  .hs-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .hs-msg-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--teal); display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 12px; color: white; flex-shrink: 0; margin-top: 2px; }
+  .hs-bubble { padding: 11px 15px; border-radius: 16px; font-size: 14px; line-height: 1.55; font-family: 'DM Sans', sans-serif; }
+  .hs-msg.hope .hs-bubble { background: white; border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); color: var(--text); }
+  .hs-msg.user .hs-bubble { background: var(--teal); border-bottom-right-radius: 4px; color: white; }
+  .hs-typing { display: flex; gap: 5px; align-items: center; padding: 13px 15px; }
+  .hs-typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); opacity: 0.4; animation: td 1.2s ease-in-out infinite; }
+  .hs-typing span:nth-child(2){animation-delay:0.2s} .hs-typing span:nth-child(3){animation-delay:0.4s}
+  @keyframes td { 0%,80%,100%{opacity:0.4;transform:scale(1)}40%{opacity:1;transform:scale(1.3)} }
+  .hs-quick-replies { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 16px 12px; }
+  .hs-qr { background: white; border: 1.5px solid var(--teal); color: var(--teal); border-radius: 20px; padding: 7px 14px; font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.18s; }
+  .hs-qr:hover { background: var(--teal); color: white; }
+  .hs-input-wrap { padding: 12px 16px 16px; background: var(--sand); border-top: 1px solid var(--sand-dark); display: flex; gap: 10px; align-items: flex-end; }
+  .hs-input { flex: 1; border: 1.5px solid var(--sand-dark); border-radius: 14px; padding: 10px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: white; resize: none; outline: none; min-height: 42px; max-height: 100px; transition: border-color 0.18s; line-height: 1.4; }
+  .hs-input:focus { border-color: var(--teal); }
+  .hs-input::placeholder { color: var(--text-muted); }
+  .hs-send { width: 42px; height: 42px; border-radius: 12px; background: var(--teal); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.18s, opacity 0.18s; }
+  .hs-send:hover { transform: scale(1.07); }
+  .hs-send:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .hs-footer { text-align: center; padding: 0 0 10px; font-size: 11px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
+  .hs-footer a { color: var(--teal); text-decoration: none; }
+  @media (max-width: 440px) { #hs-window { bottom:0;right:0;width:100vw;height:100dvh;border-radius:0; } }
+</style>
+</head>
+<body>
+<button id="hs-launcher" aria-label="Chat with Hope">
+  <svg class="icon-chat" width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <svg class="icon-close" width="22" height="22" viewBox="0 0 24 24" fill="none">
+    <path d="M18 6L6 18M6 6l12 12" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+  </svg>
+</button>
+<div id="hs-window">
+  <div class="hs-header">
+    <div class="hs-avatar">H</div>
+    <div>
+      <div class="hs-header-name">Hope</div>
+      <div class="hs-header-sub"><span class="hs-dot"></span>Hooray Stays · Online now</div>
+    </div>
+  </div>
+  <div class="hs-messages" id="hs-messages"></div>
+  <div class="hs-quick-replies" id="hs-quick-replies"></div>
+  <div class="hs-input-wrap">
+    <textarea id="hs-input" class="hs-input" placeholder="Type a message..." rows="1"></textarea>
+    <button class="hs-send" id="hs-send">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+  <div class="hs-footer">Powered by <a href="https://www.hooray-stays.com">Hooray Stays</a></div>
+</div>
+<script>
+const CONFIG = { backendUrl: 'https://hooray-stays-hope.onrender.com/api/chat', notifyEmail: 'info@hooray-stays.com' };
+const SYSTEM_PROMPT = `Your name is Hope. You are the virtual assistant for Hooray Stays, a boutique, family-owned vacation rental management company on the Texas Gulf Coast. Founders: Matt & Carissa. Phone: (832) 224-6713. Booking: https://calendly.com/matthew-codd-ff0/hooray-stays-clone.
+
+Be warm, honest, genuinely curious. Listen first. Ask ONE question at a time. Use contractions. Short conversational responses. Never use hollow affirmations like "Absolutely!" or "Great question!"
+
+SERVICE AREA: Galveston, Crystal Beach, Bolivar Peninsula, Freeport, Surfside Beach, Sargent, Bay City (~2hrs from Katy/77494). Outside this: "That's a bit outside our current service area."
+
+SERVICES: Dynamic pricing, listing optimization, 24/7 guest comms, cleaning coordination, maintenance, smart locks, Minut noise monitoring, Ring cameras, 50-70pt safety inspections, monthly reporting, payouts by 5th. First Month Free + 60-Day Risk-Free Guarantee.
+
+PRICING (never lead with this): Under $40K = not a fit. $41K-$60K = 25% + $99/mo. $61K-$99K = 20% + $99/mo. $100K+ = 20%.
+
+QUALIFY naturally one at a time: location → bed/bath/guests → pool/hot tub → current status → earnings → pain point → hands-off preference.
+
+RED FLAGS: wants to approve every booking, manage own cleaners, notified of every check-in. Handle gently: "Our model works best when owners are fully hands-off — is that what you're looking for?"
+
+GOAL: Understand situation, address concerns, qualify, book strategy call if good fit.
+
+NEVER: quote revenue guarantees, share property access info, badmouth competitors by name, make final decisions on accepting a property, ask more than one question at a time.
+
+When you have collected name, email, location, bed/bath, pool/hot tub, pain point — append this silently at the end:
+<lead_data>
+name: [name]
+email: [email]
+phone: [phone or none]
+address: [address]
+bedrooms: [X]
+bathrooms: [X]
+guests: [X]
+pool: [yes/no/unknown]
+hottub: [yes/no/unknown]
+status: [self-managing/airbnb/vrbo/other/not listed]
+earnings: [amount or unknown]
+pain_point: [their words]
+hands_off: [yes/no/unsure/red flag]
+fit: [green/caution/not a fit]
+fit_reason: [one sentence]
+call_booked: [yes/no/pending]
+</lead_data>`;
+
+let messages = [], isTyping = false, isOpen = false;
+const launcher = document.getElementById('hs-launcher');
+const chatWindow = document.getElementById('hs-window');
+const messagesEl = document.getElementById('hs-messages');
+const inputEl = document.getElementById('hs-input');
+const sendBtn = document.getElementById('hs-send');
+const qrEl = document.getElementById('hs-quick-replies');
+
+launcher.addEventListener('click', () => {
+  isOpen = !isOpen;
+  launcher.classList.toggle('open', isOpen);
+  chatWindow.classList.toggle('open', isOpen);
+  if (isOpen && messages.length === 0) {
+    setTimeout(() => addHopeMsg("Hey! I'm Hope, Hooray Stays' virtual assistant. Matt and Carissa built me to make sure you get real answers fast.\n\nAre you a property owner thinking about management, a guest with a question, or something else?"), 400);
+    showQRs(["I own a property", "I'm a guest", "Just browsing"]);
+  }
+  if (isOpen) inputEl.focus();
+});
+
+function addHopeMsg(text) {
+  messages.push({ role: 'assistant', content: text });
+  renderMsg('hope', text);
+}
+
+function renderMsg(role, text) {
+  const clean = text.replace(/<lead_data>[\s\S]*?<\/lead_data>/g, '').trim();
+  if (!clean) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'hs-msg ' + role;
+  if (role === 'hope') {
+    const av = document.createElement('div');
+    av.className = 'hs-msg-avatar'; av.textContent = 'H';
+    wrap.appendChild(av);
+  }
+  const bub = document.createElement('div');
+  bub.className = 'hs-bubble';
+  bub.innerHTML = clean.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  wrap.appendChild(bub);
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function showTyping() {
+  const el = document.createElement('div'); el.className = 'hs-msg hope'; el.id = 'hs-typ';
+  const av = document.createElement('div'); av.className = 'hs-msg-avatar'; av.textContent = 'H';
+  const bub = document.createElement('div'); bub.className = 'hs-bubble hs-typing';
+  bub.innerHTML = '<span></span><span></span><span></span>';
+  el.appendChild(av); el.appendChild(bub); messagesEl.appendChild(el);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function hideTyping() { const el = document.getElementById('hs-typ'); if(el) el.remove(); }
+
+function showQRs(opts) {
+  qrEl.innerHTML = '';
+  opts.forEach(o => {
+    const b = document.createElement('button'); b.className = 'hs-qr'; b.textContent = o;
+    b.addEventListener('click', () => { qrEl.innerHTML = ''; handleSend(o); });
+    qrEl.appendChild(b);
+  });
+}
+
+async function handleSend(text) {
+  const t = (text || inputEl.value).trim();
+  if (!t || isTyping) return;
+  qrEl.innerHTML = ''; inputEl.value = ''; inputEl.style.height = 'auto';
+  messages.push({ role: 'user', content: t });
+  renderMsg('user', t);
+  isTyping = true; sendBtn.disabled = true; showTyping();
+  try {
+    const res = await fetch(CONFIG.backendUrl, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, system: SYSTEM_PROMPT })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || "Something went wrong — please try again.";
+    const leadMatch = reply.match(/<lead_data>([\s\S]*?)<\/lead_data>/);
+    if (leadMatch) sendLeadEmail(leadMatch[1]);
+    messages.push({ role: 'assistant', content: reply });
+    hideTyping(); renderMsg('hope', reply);
+    if (reply.toLowerCase().includes('calendly') || reply.toLowerCase().includes('strategy call')) {
+      showQRs(["Book a call now", "Tell me more first", "What does it cost?"]);
+    } else if (messages.length === 2) {
+      showQRs(["How does pricing work?", "What's included?", "What makes you different?"]);
+    }
+  } catch(e) {
+    hideTyping();
+    renderMsg('hope', "Sorry, I hit a snag. Reach Matt and Carissa at (832) 224-6713 or info@hooray-stays.com.");
+  }
+  isTyping = false; sendBtn.disabled = false; inputEl.focus();
+}
+
+function sendLeadEmail(raw) {
+  const fields = {};
+  raw.split('\n').forEach(line => {
+    const idx = line.indexOf(':');
+    if (idx > -1) fields[line.slice(0,idx).trim()] = line.slice(idx+1).trim();
+  });
+  fetch(CONFIG.backendUrl.replace('/chat','/lead'), {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ fields })
+  }).catch(e => console.log('Lead error:', e));
+}
+
+sendBtn.addEventListener('click', () => handleSend());
+inputEl.addEventListener('keydown', e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();} });
+inputEl.addEventListener('input', () => { inputEl.style.height='auto'; inputEl.style.height=Math.min(inputEl.scrollHeight,100)+'px'; });
+</script>
+</body>
+</html>
